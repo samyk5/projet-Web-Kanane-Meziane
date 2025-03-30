@@ -1,0 +1,25 @@
+{{> header}}
+
+<div class="container">
+  <h2>Annonces disponibles</h2>
+  <div class="row">
+    {{#offers}}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        <img src="{{img_url}}" class="card-img-top" alt="{{title}}">
+        <div class="card-body">
+          <h5 class="card-title">{{title}}</h5>
+          <p class="card-text">{{description}}</p>
+          <p class="card-text"><strong>Prix : {{price}} €</strong></p>
+          <form action="/add_to_cart" method="POST">
+            <input type="hidden" name="product_id" value="{{id}}">
+            <button type="submit" class="btn btn-primary">Ajouter au panier</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {{/offers}} <!-- Fermeture correcte de la section -->
+  </div>
+</div>
+
+{{> footer}}
