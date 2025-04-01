@@ -1,0 +1,36 @@
+{{> header}} <!-- Inclut le header -->
+
+<div class="container mt-5">
+  <h2>Mes Offres</h2>
+
+  <!-- Vérifie s'il y a des offres -->
+  <div class="row">
+    {{#offers}}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm">
+        <img src="https://via.placeholder.com/150" class="card-img-top" alt="Image de l'offre">
+        <div class="card-body">
+          <h5 class="card-title">{{title}}</h5>
+          <p class="card-text">{{description}}</p>
+          <ul class="list-unstyled">
+            <li><strong>Quantité:</strong> {{quantity}}</li>
+            <li><strong>Date limite:</strong> {{expiration_date}}</li>
+            <li><strong>Localisation:</strong> {{location}}</li>
+          </ul>
+          <a href="#" class="btn btn-primary">Voir plus</a>
+        </div>
+      </div>
+    </div>
+    {{/offers}}
+  </div>
+
+  <!-- Si l'utilisateur n'a pas d'offres -->
+  {{^offers}}
+  <div class="alert alert-warning" role="alert">
+    Vous n'avez pas encore créé d'offres.
+  </div>
+  {{/offers}}
+
+</div>
+
+{{> footer}} <!-- Inclut le footer -->

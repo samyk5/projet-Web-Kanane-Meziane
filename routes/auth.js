@@ -18,6 +18,7 @@ module.exports = (db) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
+      
       const insertUser = db.prepare(
         'INSERT INTO users (name, email, password, role, location) VALUES (?, ?, ?, ?, ?)'
       );
@@ -39,11 +40,14 @@ module.exports = (db) => {
 
     try {
       const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+      
       if (!user) {
         return res.status(400).render('login', { error: 'Email ou mot de passe incorrect' });
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
+       
+      
       if (!validPassword) {
         return res.status(400).render('login', { error: 'Email ou mot de passe incorrect' });
       }
@@ -55,8 +59,10 @@ module.exports = (db) => {
         role: user.role
       };
 
+      
       res.redirect('/');
     } catch (error) {
+      console.log("Erreur dans la connexion :", error);
       res.status(500).render('login', { error: 'Erreur serveur' });
     }
   });

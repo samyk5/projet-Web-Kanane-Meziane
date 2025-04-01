@@ -22,10 +22,28 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
   keys: ['clé_secrète_1', 'clé_secrète_2'],
-  maxAge: 24 * 60 * 60 * 1000 // Durée de vie de la session : 24 heures
+  maxAge: 24 * 60 * 60 * 1000 ,  // Durée de vie de la session : 24 heures
+  secure: false, // Désactive le mode sécurisé si en localhost
+  httpOnly: true
 }));
 
-// Servir les fichiers statiques
+// Middleware pour partager la session avec les vues
+app.use((req, res, next) => {
+  res.locals.session = req.session.user; // Assurer que la session est disponible pour les templates
+  next();
+});
+
+// Fonction de middleware pour vérifier si l'utilisateur est authentifié
+const requireAuth = (req, res, next) => {
+  if (!req.session.user) {
+    return res.redirect('/auth/login'); // Redirige si l'utilisateur n'est pas connecté
+  }
+  next();
+};
+
+
+
+// Configurer Express pour servir des fichiers statiques (CSS, JS) depuis le dossier "public"
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
@@ -38,10 +56,16 @@ app.use('/offers', offersRoutes);
 app.use('/requests', requestsRoutes);
 
 // Route GET pour la page d'accueil
-app.get('/', (req, res) => {
-  const offersQuery = db.prepare("SELECT * FROM food_offers WHERE status = 'disponible'");
-  const offers = offersQuery.all();
-  res.render('index', { offers, user: req.session.user });
+app.get('/', requireAuth, (req, res) => {
+  const offers = db.prepare("SELECT * FROM food_offers WHERE status = 'disponible'").all();
+  res.render('index', {
+    session: req.session.user ? {
+      name: req.session.user.name,
+      isDonator: req.session.user.role === 'donateur',
+      isBeneficiary: req.session.user.role === 'beneficiaire'
+    } : null,  // Récupère les informations de l'utilisateur connecté
+    offers: offers
+  });
 });
 
 // Démarrer le serveur

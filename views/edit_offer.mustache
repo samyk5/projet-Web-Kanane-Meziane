@@ -1,0 +1,31 @@
+<!-- /views/edit_offer.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier l'annonce</title>
+    <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+    <h1>Modifier l'annonce</h1>
+    <form action="/offers/{{offer.id}}/edit" method="POST">
+        <label for="title">Titre</label>
+        <input type="text" id="title" name="title" value="{{offer.title}}" required>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" required>{{offer.description}}</textarea>
+
+        <label for="quantity">Quantité disponible</label>
+        <input type="number" id="quantity" name="quantity" value="{{offer.quantity}}" required>
+
+        <label for="expiration_date">Date limite de consommation</label>
+        <input type="date" id="expiration_date" name="expiration_date" value="{{offer.expiration_date}}" required>
+
+        <label for="location">Localisation</label>
+        <input type="text" id="location" name="location" value="{{offer.location}}" required>
+
+        <button type="submit">Mettre à jour l'annonce</button>
+    </form>
+</body>
+</html>

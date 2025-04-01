@@ -1,6 +1,8 @@
 module.exports = (db) => {
   const express = require('express');
   const router = express.Router();
+  const { body, validationResult } = require('express-validator');
+  const xss = require('xss');
 
   // Middleware pour vérifier l'authentification
   const requireAuth = (req, res, next) => {
@@ -11,9 +13,13 @@ module.exports = (db) => {
   };
 
   // Faire une demande
-  router.post('/create', requireAuth, (req, res) => {
-    if (req.session.user.role !== 'beneficiaire') {
-      return res.status(403).send('Accès non autorisé');
+  router.post('/create', requireAuth, [
+    body('offer_id').isInt({ min: 1 }).withMessage('ID de l\'offre invalide')
+  ], (req, res) => {
+    // Validation des données d'entrée
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).send({ errors: errors.array() });
     }
 
     const { offer_id } = req.body;
@@ -24,8 +30,9 @@ module.exports = (db) => {
       VALUES (?, ?, 'en_attente')
     `;
 
-    db.run(query, [offer_id, req.session.user.id], function(err) {
+    db.run(query, [offer_id, req.session.user.id], function (err) {
       if (err) {
+        console.error('Erreur lors de la création de la demande:', err);
         return res.status(500).send('Erreur lors de la création de la demande');
       }
       res.redirect('/dashboard');
@@ -48,6 +55,7 @@ module.exports = (db) => {
 
     db.all(query, [req.session.user.id], (err, requests) => {
       if (err) {
+        console.error('Erreur lors de la récupération des demandes:', err);
         return res.status(500).send('Erreur serveur');
       }
       res.render('my_requests', { requests });
@@ -55,17 +63,23 @@ module.exports = (db) => {
   });
 
   // Accepter/Refuser une demande
-  router.post('/respond', requireAuth, (req, res) => {
-    if (req.session.user.role !== 'donateur') {
-      return res.status(403).send('Accès non autorisé');
+  router.post('/respond', requireAuth, [
+    body('request_id').isInt({ min: 1 }).withMessage('ID de la demande invalide'),
+    body('status').isIn(['accepté', 'refusé']).withMessage('Statut invalide')
+  ], (req, res) => {
+    // Validation des données d'entrée
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).send({ errors: errors.array() });
     }
 
     const { request_id, status } = req.body;
 
     const query = 'UPDATE requests SET status = ? WHERE id = ?';
 
-    db.run(query, [status, request_id], function(err) {
+    db.run(query, [status, request_id], function (err) {
       if (err) {
+        console.error('Erreur lors de la mise à jour de la demande:', err);
         return res.status(500).send('Erreur lors de la mise à jour de la demande');
       }
       res.redirect('/requests/my-requests');
