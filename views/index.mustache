@@ -1,34 +1,62 @@
 {{> header}}
 
-<div class="container">
-  <h2>Annonces disponibles</h2>
-  
-  <!-- Afficher le bouton 'Ajouter une annonce' si l'utilisateur est un donateur -->
-  {{#user}}
-    {{#isDonator}}
-      <a href="/offers/new" class="btn btn-success mb-4">Publier une nouvelle offre</a>
-    {{/isDonator}}
-  {{/user}}
-  
-  <div class="row">
-    {{#offers}}
-      <div class="col-md-4 mb-4">
-        <div class="card h-100">
-          <img src="{{img_url}}" class="card-img-top" alt="{{title}}">
-          <div class="card-body">
-            <h5 class="card-title">{{title}}</h5>
-            <p class="card-text">{{description}}</p>
-            <p class="card-text"><strong>Quantité : {{quantity}}</strong></p>
-            <p class="card-text"><strong>Date limite : {{expiration_date}}</strong></p>
-            <form action="/requests/create" method="POST">
-              <input type="hidden" name="offer_id" value="{{id}}">
-              <button type="submit" class="btn btn-primary">Faire une demande</button>
-            </form>
-          </div>
+<div class="container mt-4">
+    <h2 class="mb-4">Annonces Disponibles</h2>
+
+    <!-- 🔍 Barre de recherche et filtres -->
+    <form method="GET" action="/" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Rechercher une annonce..." value="{{search}}">
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="location" class="form-control" placeholder="Localisation" value="{{location}}">
+            </div>
+            <div class="col-md-3">
+                <select name="sort" class="form-control">
+                    <option value="">Trier par...</option>
+                    <option value="date">Date d'expiration</option>
+                    <option value="location">Localisation</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+            </div>
         </div>
-      </div>
+    </form>
+
+    <!-- 🎨 Affichage des annonces -->
+    <div class="row">
+        {{#offers}}
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <img src="https://via.placeholder.com/150" class="card-img-top" alt="Image de l'offre">
+                <div class="card-body">
+                    <h5 class="card-title">{{title}}</h5>
+                    <p class="card-text">{{description}}</p>
+                    <ul class="list-unstyled">
+                        <li><strong>Quantité:</strong> {{quantity}}</li>
+                        <li><strong>Expiration:</strong> {{expiration_date}}</li>
+                        <li><strong>Localisation:</strong> {{location}}</li>
+                    </ul>
+                    {{#session.isBeneficiary}}
+                      <form action="/requests/create" method="POST">
+                        <input type="hidden" name="offer_id" value="{{id}}">
+                        <button class="btn btn-custom" type="submit">Demander</button>
+                      </form>
+                    {{/session.isBeneficiary}} 
+
+                    <a href="/offers/offer/{{id}}" class="btn btn-outline-primary w-100">Voir plus</a>
+                </div>
+            </div>
+        </div>
+        {{/offers}}
+    </div>
+
+    <!-- 📢 Message si aucune annonce n'est disponible -->
+    {{^offers}}
+    <div class="alert alert-warning text-center">Aucune annonce disponible.</div>
     {{/offers}}
-  </div>
 </div>
 
 {{> footer}}

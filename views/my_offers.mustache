@@ -17,7 +17,11 @@
             <li><strong>Date limite:</strong> {{expiration_date}}</li>
             <li><strong>Localisation:</strong> {{location}}</li>
           </ul>
-          <a href="#" class="btn btn-primary">Voir plus</a>
+          <!-- Vérifie si l'utilisateur est le donateur de cette annonce -->
+          
+          <a href="/offers/edit/{{id}}" class="btn btn-warning btn-sm">Modifier</a>
+          <a href="/offers/delete/{{id}}" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')">Supprimer</a>
+          
         </div>
       </div>
     </div>

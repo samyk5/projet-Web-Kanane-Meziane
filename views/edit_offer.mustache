@@ -1,31 +1,30 @@
-<!-- /views/edit_offer.html -->
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modifier l'annonce</title>
-    <link rel="stylesheet" href="/public/styles.css">
-</head>
-<body>
-    <h1>Modifier l'annonce</h1>
-    <form action="/offers/{{offer.id}}/edit" method="POST">
-        <label for="title">Titre</label>
-        <input type="text" id="title" name="title" value="{{offer.title}}" required>
+{{> header}}
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description" required>{{offer.description}}</textarea>
+<div class="container mt-5">
+  <h2>Modifier l'annonce</h2>
+  <form action="/offers/edit/{{offer.id}}" method="POST">
+    <div class="mb-3">
+      <label for="title" class="form-label">Titre</label>
+      <input type="text" class="form-control" id="title" name="title" value="{{offer.title}}" required>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea class="form-control" id="description" name="description" required>{{offer.description}}</textarea>
+    </div>
+    <div class="mb-3">
+      <label for="quantity" class="form-label">Quantité</label>
+      <input type="number" class="form-control" id="quantity" name="quantity" value="{{offer.quantity}}" required>
+    </div>
+    <div class="mb-3">
+      <label for="expiration_date" class="form-label">Date limite</label>
+      <input type="date" class="form-control" id="expiration_date" name="expiration_date" value="{{offer.expiration_date}}" required>
+    </div>
+    <div class="mb-3">
+      <label for="location" class="form-label">Localisation</label>
+      <input type="text" class="form-control" id="location" name="location" value="{{offer.location}}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Modifier</button>
+  </form>
+</div>
 
-        <label for="quantity">Quantité disponible</label>
-        <input type="number" id="quantity" name="quantity" value="{{offer.quantity}}" required>
-
-        <label for="expiration_date">Date limite de consommation</label>
-        <input type="date" id="expiration_date" name="expiration_date" value="{{offer.expiration_date}}" required>
-
-        <label for="location">Localisation</label>
-        <input type="text" id="location" name="location" value="{{offer.location}}" required>
-
-        <button type="submit">Mettre à jour l'annonce</button>
-    </form>
-</body>
-</html>
+{{> footer}}

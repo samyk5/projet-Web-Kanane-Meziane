@@ -50,23 +50,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 const authRoutes = require('./routes/auth')(db);
 const offersRoutes = require('./routes/offers')(db);
 const requestsRoutes = require('./routes/requests')(db);
+const indexRoutes = require('./routes/index')(db);
 
+
+app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/offers', offersRoutes);
 app.use('/requests', requestsRoutes);
 
-// Route GET pour la page d'accueil
-app.get('/', requireAuth, (req, res) => {
-  const offers = db.prepare("SELECT * FROM food_offers WHERE status = 'disponible'").all();
-  res.render('index', {
-    session: req.session.user ? {
-      name: req.session.user.name,
-      isDonator: req.session.user.role === 'donateur',
-      isBeneficiary: req.session.user.role === 'beneficiaire'
-    } : null,  // Récupère les informations de l'utilisateur connecté
-    offers: offers
-  });
-});
+// // Route GET pour la page d'accueil
+// app.get('/', requireAuth, (req, res) => {
+//   const offers = db.prepare("SELECT * FROM food_offers WHERE status = 'disponible'").all();
+//   res.render('index', {
+//     session: req.session.user ? {
+//       name: req.session.user.name,
+//       isDonator: req.session.user.role === 'donateur',
+//       isBeneficiary: req.session.user.role === 'beneficiaire'
+//     } : null,  // Récupère les informations de l'utilisateur connecté
+//     offers: offers
+//   });
+// });
 
 // Démarrer le serveur
 app.listen(PORT, () => {

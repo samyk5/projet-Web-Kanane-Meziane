@@ -2,9 +2,8 @@ module.exports = (db) => {
   const express = require('express');
   const router = express.Router();
   const { body, validationResult } = require('express-validator');
-  const xss = require('xss');
 
-  // Middleware pour vérifier l'authentification
+  // 🔐 Middleware d'authentification
   const requireAuth = (req, res, next) => {
     if (!req.session.user) {
       return res.redirect('/auth/login');
@@ -12,39 +11,44 @@ module.exports = (db) => {
     next();
   };
 
-  // Faire une demande
   router.post('/create', requireAuth, [
-    body('offer_id').isInt({ min: 1 }).withMessage('ID de l\'offre invalide')
+    body('offer_id').isInt({ min: 1 }).withMessage("ID de l'offre invalide")
   ], (req, res) => {
-    // Validation des données d'entrée
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() });
     }
-
+  
     const { offer_id } = req.body;
-
-    const query = `
-      INSERT INTO requests 
-      (offer_id, user_id, status) 
-      VALUES (?, ?, 'en_attente')
-    `;
-
-    db.run(query, [offer_id, req.session.user.id], function (err) {
-      if (err) {
-        console.error('Erreur lors de la création de la demande:', err);
-        return res.status(500).send('Erreur lors de la création de la demande');
+    const user_id = req.session.user.id;
+  
+    try {
+      // Vérifier si l'utilisateur a déjà fait une demande pour cette offre
+      const existingRequest = db.prepare("SELECT id FROM requests WHERE user_id = ? AND offer_id = ?").get(user_id, offer_id);
+  
+      if (existingRequest) {
+        return res.status(400).send("Vous avez déjà fait une demande pour cette annonce.");
       }
+  
+      // Préparer et exécuter l'insertion de la demande
+      const insertQuery = db.prepare(`
+        INSERT INTO requests (offer_id, user_id, status) 
+        VALUES (?, ?, 'en attente')
+      `);
+      insertQuery.run(offer_id, user_id);
+  
       res.redirect('/dashboard');
-    });
-  });
-
-  // Liste des demandes pour un donateur
-  router.get('/my-requests', requireAuth, (req, res) => {
-    if (req.session.user.role !== 'donateur') {
-      return res.status(403).send('Accès non autorisé');
+    } catch (err) {
+      console.error("Erreur lors de la création de la demande:", err);
+      return res.status(500).send("Erreur serveur");
     }
+  });
+  
 
+  // 📜 Liste des demandes reçues (donateur)
+  router.get('/my-requests', requireAuth, (req, res) => {
+    
+  
     const query = `
       SELECT r.id, r.status, o.title, u.name as requester_name 
       FROM requests r
@@ -52,39 +56,54 @@ module.exports = (db) => {
       JOIN users u ON r.user_id = u.id
       WHERE o.user_id = ?
     `;
-
-    db.all(query, [req.session.user.id], (err, requests) => {
-      if (err) {
-        console.error('Erreur lors de la récupération des demandes:', err);
-        return res.status(500).send('Erreur serveur');
+  
+    try {
+      // Utilisation de db.prepare().all() de manière synchrone
+      const requests = db.prepare(query).all(req.session.user.id);
+  
+      // Vérifie si des demandes existent
+      if (!requests || requests.length === 0) {
+        console.log("⚠️ Aucune demande trouvée.");
       }
-      res.render('my_requests', { requests });
-    });
+  
+      // Ajouter un champ pour savoir si la demande est en attente
+      const modifiedRequests = requests.map(req => ({
+        ...req,
+        isPending: req.status === "en attente"
+      }));
+  
+      // Rendu de la vue
+      res.render('my_requests', { requests: modifiedRequests });
+    } catch (err) {
+      console.error("❌ Erreur SQL :", err);
+      return res.status(500).send("Erreur serveur");
+    }
   });
 
-  // Accepter/Refuser une demande
   router.post('/respond', requireAuth, [
-    body('request_id').isInt({ min: 1 }).withMessage('ID de la demande invalide'),
-    body('status').isIn(['accepté', 'refusé']).withMessage('Statut invalide')
+    body('request_id').isInt({ min: 1 }).withMessage("ID de la demande invalide"),
+    body('status').isIn(['accepté', 'refusé']).withMessage("Statut invalide")
   ], (req, res) => {
-    // Validation des données d'entrée
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).send({ errors: errors.array() });
+      return res.status(400).json({ errors: errors.array() });
     }
-
+  
     const { request_id, status } = req.body;
-
-    const query = 'UPDATE requests SET status = ? WHERE id = ?';
-
-    db.run(query, [status, request_id], function (err) {
-      if (err) {
-        console.error('Erreur lors de la mise à jour de la demande:', err);
-        return res.status(500).send('Erreur lors de la mise à jour de la demande');
-      }
+  
+    try {
+      // Préparer et exécuter la mise à jour du statut de la demande
+      const updateQuery = db.prepare("UPDATE requests SET status = ? WHERE id = ?");
+      updateQuery.run(status, request_id);
+  
+      // Rediriger vers la liste des demandes après la mise à jour
       res.redirect('/requests/my-requests');
-    });
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour de la demande:", err);
+      return res.status(500).send("Erreur serveur");
+    }
   });
+  
 
   return router;
 };

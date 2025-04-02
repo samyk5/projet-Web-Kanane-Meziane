@@ -86,7 +86,12 @@
 
         <!-- Contact/Action -->
         <div class="offer-footer">
-          <a href="/offer/{{id}}/request" class="btn btn-custom">Faire une demande</a>
+           {{#session.isBeneficiary}}
+              <form action="/requests/create" method="POST">
+                <input type="hidden" name="offer_id" value="{{id}}">
+                <button class="btn btn-custom" type="submit">Demander</button>
+              </form>
+            {{/session.isBeneficiary}} 
         </div>
       </div>
     </div>
