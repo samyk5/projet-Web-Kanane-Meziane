@@ -1,0 +1,29 @@
+{{> header}}
+
+<h2>📦 Mes demandes de nourriture</h2>
+
+{{#requests.length}}
+<div class="requests-list">
+  {{#requests}}
+    <div class="request-card {{status}}">
+      <h3>{{title}}</h3>
+      <p><strong>Description :</strong> {{description}}</p>
+      <p><strong>Lieu de retrait :</strong> {{location}}</p>
+      <p><strong>Demandée le :</strong> {{request_date}}</p>
+      <p class="status">
+         🛈 Statut : 
+         <a href="/offers/{{offer_id}}" class="status-link {{status}}">
+          <span>{{status}}</span>
+         </a>
+      </p>
+
+    </div>
+  {{/requests}}
+</div>
+{{/requests.length}}
+
+{{^requests.length}}
+<p>Vous n'avez encore fait aucune demande.</p>
+{{/requests.length}}
+
+{{> footer}}

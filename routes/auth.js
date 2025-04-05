@@ -9,7 +9,7 @@ module.exports = (db) => {
   });
 
   router.post('/signup', async (req, res) => {
-    const { name, email, password, role, location } = req.body;
+    const { name, email, password, role, location, phone, bio, profile_picture } = req.body;
 
     try {
       const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
@@ -20,9 +20,9 @@ module.exports = (db) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       
       const insertUser = db.prepare(
-        'INSERT INTO users (name, email, password, role, location) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO users (name, email, password, role, location, phone, bio, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       );
-      insertUser.run(name, email, hashedPassword, role, location);
+      insertUser.run(name, email, hashedPassword, role, location, phone, bio, profile_picture);
 
       res.redirect('/auth/login');
     } catch (error) {

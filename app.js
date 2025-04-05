@@ -51,12 +51,16 @@ const authRoutes = require('./routes/auth')(db);
 const offersRoutes = require('./routes/offers')(db);
 const requestsRoutes = require('./routes/requests')(db);
 const indexRoutes = require('./routes/index')(db);
+const profileRoutes = require('./routes/profile')(db);
+
+
 
 
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/offers', offersRoutes);
 app.use('/requests', requestsRoutes);
+app.use('/profile', profileRoutes);
 
 // // Route GET pour la page d'accueil
 // app.get('/', requireAuth, (req, res) => {

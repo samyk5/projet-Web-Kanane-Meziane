@@ -67,17 +67,35 @@ module.exports = (db) => {
     res.render('my_offers', { offers });
   });
 
-  // Afficher une annonce spécifique
-  router.get('/offer/:id', requireAuth, (req, res) => {
-    const offerId = req.params.id;
-    const offer = getOfferById(offerId);
+  // // Afficher une annonce spécifique
+  // router.get('/offer/:id', requireAuth, (req, res) => {
+  //   const offerId = req.params.id;
+  //   const offer = getOfferById(offerId);
 
+  //   if (!offer) {
+  //     return res.status(404).send('Offre non trouvée');
+  //   }
+
+  //   res.render('offer', { offer });
+  // });
+
+  router.get('/:id', (req, res) => {
+    
+    const offer = db.prepare(`
+      SELECT o.*, u.name AS owner_name, u.id AS owner_id
+      FROM food_offers o
+      JOIN users u ON o.user_id = u.id
+      WHERE o.id = ?
+    `).get(req.params.id);
+    
+  
     if (!offer) {
-      return res.status(404).send('Offre non trouvée');
+      return res.status(404).send("Annonce introuvable");
     }
-
+  
     res.render('offer', { offer });
   });
+  
 
   // Afficher le formulaire d'édition d'une annonce
   router.get('/edit/:id', requireAuth, (req, res) => {
@@ -120,8 +138,15 @@ module.exports = (db) => {
         return res.status(403).send("Accès refusé");
     }
 
-    deleteOffer(offerId);
-    res.redirect('/offers/my-offers');
+    try {
+      deleteOffer(offerId);
+      res.redirect('/offers/my-offers'); // ou autre redirection logique
+    } catch (err) {
+      console.error("Erreur lors de la suppression :", err.message);
+      res.status(400).send(err.message); // ou render une page avec le message
+    }
+
+    
   });
 
   return router;

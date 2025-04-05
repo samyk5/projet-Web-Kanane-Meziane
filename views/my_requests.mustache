@@ -1,32 +1,65 @@
-<h2>Demandes reçues</h2>
+{{> header}}
 
-{{#requests.length}}
-<table>
-    <tr>
-        <th>Annonce</th>
-        <th>Bénéficiaire</th>
-        <th>Statut</th>
-        <th>Action</th>
-    </tr>
-    {{#requests}}
-    <tr>
-        <td>{{title}}</td>
-        <td>{{requester_name}}</td>
-        <td>{{status}}</td>
-        <td>
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">📥 Demandes reçues</h2>
+
+  {{#requests.length}}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle table-bordered shadow-sm rounded">
+      <thead class="table-dark">
+        <tr>
+          <th>📝 Annonce</th>
+          <th>👤 Bénéficiaire</th>
+          <th>📌 Statut</th>
+          <th>⚙️ Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#requests}}
+        <tr>
+          <td><strong>{{title}}</strong></td>
+          <td>
+            <a href="/profile/{{user_id}}" class="text-decoration-none">
+              <img src="{{requester_picture}}" class="rounded-circle me-2" width="40" height="40" alt="Photo de {{requester_name}}">
+              {{requester_name}}
+            </a>
+          </td>
+          <td>
             {{#isPending}}
-            <form action="/requests/respond" method="POST">
-                <input type="hidden" name="request_id" value="{{id}}">
-                <button type="submit" name="status" value="accepté">✅ Accepter</button>
-                <button type="submit" name="status" value="refusé">❌ Refuser</button>
+              <span class="badge bg-warning text-dark">En attente</span>
+            {{/isPending}}
+            {{#isAccepted}}
+              <span class="badge bg-success">Acceptée</span>
+            {{/isAccepted}}
+            {{#isRefused}}
+              <span class="badge bg-danger">Refusée</span>
+            {{/isRefused}}
+          </td>
+          <td>
+            {{#isPending}}
+            <form action="/requests/respond" method="POST" class="d-flex gap-2">
+              <input type="hidden" name="request_id" value="{{id}}">
+              <button type="submit" name="status" value="accepté" class="btn btn-success btn-sm">✅ Accepter</button>
+              <button type="submit" name="status" value="refusé" class="btn btn-danger btn-sm">❌ Refuser</button>
             </form>
             {{/isPending}}
-        </td>
-    </tr>
-    {{/requests}}
-</table>
-{{/requests.length}}
 
-{{^requests.length}}
-<p>Aucune demande reçue.</p>
-{{/requests.length}}
+            {{^isPending}}
+              <span class="text-muted">Action terminée</span>
+            {{/isPending}}
+          </td>
+        </tr>
+        {{/requests}}
+      </tbody>
+    </table>
+  </div>
+  {{/requests.length}}
+
+  {{^requests.length}}
+  <div class="alert alert-info text-center">
+    Aucune demande reçue pour le moment.
+  </div>
+  {{/requests.length}}
+</div>
+
+{{> footer}}

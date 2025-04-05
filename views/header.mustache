@@ -43,7 +43,8 @@
                 <!-- Si l'utilisateur est un bénéficiaire, afficher un lien pour consulter les offres -->
                 {{#session.isBeneficiary}}
                   <li class="nav-item">
-                    <a class="nav-link" href="/offers">Consulter les offres disponibles</a>
+                    {{! <a class="nav-link" href="/offers">Consulter les offres disponibles</a> }}
+                    <a class="nav-link" href="/requests/my-status">Status Des Demandes</a>
                   </li>
                 {{/session.isBeneficiary}}
 

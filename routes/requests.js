@@ -50,12 +50,14 @@ module.exports = (db) => {
     
   
     const query = `
-      SELECT r.id, r.status, o.title, u.name as requester_name 
-      FROM requests r
-      JOIN food_offers o ON r.offer_id = o.id
-      JOIN users u ON r.user_id = u.id
-      WHERE o.user_id = ?
-    `;
+       SELECT r.id, r.status, r.offer_id,
+       u.id AS user_id, u.name AS requester_name, u.profile_picture AS requester_picture,
+       o.title
+       FROM requests r
+       JOIN users u ON r.user_id = u.id
+       JOIN food_offers o ON r.offer_id = o.id
+       WHERE o.user_id = ?
+      `;
   
     try {
       // Utilisation de db.prepare().all() de manière synchrone
@@ -66,14 +68,18 @@ module.exports = (db) => {
         console.log("⚠️ Aucune demande trouvée.");
       }
   
-      // Ajouter un champ pour savoir si la demande est en attente
-      const modifiedRequests = requests.map(req => ({
-        ...req,
-        isPending: req.status === "en attente"
+      
+
+      // 🔥 Ici tu ajoutes les booléens pour Mustache
+      const enhancedRequests = requests.map(r => ({
+        ...r,
+        isPending: r.status === 'en attente',
+        isAccepted: r.status === 'accepté',
+        isRefused: r.status === 'refusé'
       }));
   
       // Rendu de la vue
-      res.render('my_requests', { requests: modifiedRequests });
+      res.render('my_requests', { requests: enhancedRequests });
     } catch (err) {
       console.error("❌ Erreur SQL :", err);
       return res.status(500).send("Erreur serveur");
@@ -92,18 +98,86 @@ module.exports = (db) => {
     const { request_id, status } = req.body;
   
     try {
-      // Préparer et exécuter la mise à jour du statut de la demande
-      const updateQuery = db.prepare("UPDATE requests SET status = ? WHERE id = ?");
-      updateQuery.run(status, request_id);
+      const request = db.prepare(`
+        SELECT * FROM requests WHERE id = ?
+      `).get(request_id);
   
-      // Rediriger vers la liste des demandes après la mise à jour
+      if (!request) {
+        return res.status(404).send("Demande introuvable");
+      }
+  
+      // Mise à jour du statut
+      db.prepare("UPDATE requests SET status = ? WHERE id = ?").run(status, request_id);
+  
+      if (status === 'accepté') {
+        // Récupérer l'offre correspondante
+        const offer = db.prepare("SELECT * FROM food_offers WHERE id = ?").get(request.offer_id);
+  
+        if (offer && offer.quantity > 0) {
+          const newQuantity = offer.quantity - 1;
+  
+          // Mettre à jour la quantité (et éventuellement le statut)
+          if (newQuantity <= 0) {
+            db.prepare("UPDATE food_offers SET quantity = 0, status = 'indisponible' WHERE id = ?").run(offer.id);
+          } else {
+            db.prepare("UPDATE food_offers SET quantity = ? WHERE id = ?").run(newQuantity, offer.id);
+          }
+        }
+      }
+  
       res.redirect('/requests/my-requests');
     } catch (err) {
-      console.error("Erreur lors de la mise à jour de la demande:", err);
+      console.error("Erreur lors du traitement de la demande:", err);
       return res.status(500).send("Erreur serveur");
     }
   });
   
+
+  
+
+
+
+
+  // routes/requests.js
+
+  router.get('/my-status', requireAuth, (req, res) => {
+   if (req.session.user.role !== 'beneficiaire') {
+    return res.status(403).send('Accès non autorisé');
+   }
+
+   const query = `
+   SELECT 
+    r.id, 
+    r.status, 
+    o.id AS offer_id,         -- ← ici on ajoute l'identifiant de l'offre
+    o.title, 
+    o.description, 
+    o.location, 
+    o.expiration_date, 
+    r.request_date
+   FROM requests r
+   JOIN food_offers o ON r.offer_id = o.id
+   WHERE r.user_id = ?
+   ORDER BY r.request_date DESC
+   `;
+
+   try {
+     const myRequests = db.prepare(query).all(req.session.user.id);
+     res.render('my_status', {
+       requests: myRequests,
+       session: {
+         name: req.session.user.name,
+         isBeneficiary: true
+        }
+      });
+    } catch (err) {
+     console.error("Erreur lors de la récupération des demandes:", err);
+     res.status(500).send("Erreur serveur");
+    }
+  });
+
+
+
 
   return router;
 };

@@ -19,9 +19,16 @@ module.exports = (db) => {
     }
   
     function deleteOffer(offerId) {
+      const count = db.prepare("SELECT COUNT(*) AS count FROM requests WHERE offer_id = ?").get(offerId).count;
+    
+      if (count > 0) {
+        // On lève une erreur personnalisée si des demandes existent
+        throw new Error("Impossible de supprimer l’offre : des demandes y sont encore associées.");
+      }
+    
       return db.prepare('DELETE FROM food_offers WHERE id = ?').run(offerId);
     }
-  
+      
     return { getOfferById, updateOffer, deleteOffer };
 };
   

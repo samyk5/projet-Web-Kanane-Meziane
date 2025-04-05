@@ -16,8 +16,10 @@
             <li><strong>Quantité:</strong> {{quantity}}</li>
             <li><strong>Date limite:</strong> {{expiration_date}}</li>
             <li><strong>Localisation:</strong> {{location}}</li>
+
           </ul>
           <!-- Vérifie si l'utilisateur est le donateur de cette annonce -->
+          <p><strong>Publié par :</strong> <a href="/profile/{{user_id}}">Voir le profil</a></p>
           
           <a href="/offers/edit/{{id}}" class="btn btn-warning btn-sm">Modifier</a>
           <a href="/offers/delete/{{id}}" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')">Supprimer</a>
