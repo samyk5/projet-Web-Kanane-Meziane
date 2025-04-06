@@ -1,62 +1,170 @@
 {{> header}}
 
-<div class="container mt-4">
-    <h2 class="mb-4">Annonces Disponibles</h2>
-
-    <!-- 🔍 Barre de recherche et filtres -->
-    <form method="GET" action="/" class="mb-4">
-        <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control" placeholder="Rechercher une annonce..." value="{{search}}">
-            </div>
-            <div class="col-md-3">
-                <input type="text" name="location" class="form-control" placeholder="Localisation" value="{{location}}">
-            </div>
-            <div class="col-md-3">
-                <select name="sort" class="form-control">
-                    <option value="">Trier par...</option>
-                    <option value="date">Date d'expiration</option>
-                    <option value="location">Localisation</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-            </div>
+<div class="offers-container">
+    <!-- Hero Section -->
+    <div class="hero-section bg-light py-5 mb-5">
+        <div class="container text-center">
+            <h1 class="display-5 fw-bold mb-3">Annonces Disponibles</h1>
+            <p class="lead">Découvrez les surplus alimentaires disponibles près de chez vous</p>
         </div>
-    </form>
-
-    <!-- 🎨 Affichage des annonces -->
-    <div class="row">
-        {{#offers}}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <img src="https://via.placeholder.com/150" class="card-img-top" alt="Image de l'offre">
-                <div class="card-body">
-                    <h5 class="card-title">{{title}}</h5>
-                    <p class="card-text">{{description}}</p>
-                    <ul class="list-unstyled">
-                        <li><strong>Quantité:</strong> {{quantity}}</li>
-                        <li><strong>Expiration:</strong> {{expiration_date}}</li>
-                        <li><strong>Localisation:</strong> {{location}}</li>
-                    </ul>
-                    {{#session.isBeneficiary}}
-                      <form action="/requests/create" method="POST">
-                        <input type="hidden" name="offer_id" value="{{id}}">
-                        <button class="btn btn-custom" type="submit">Demander</button>
-                      </form>
-                    {{/session.isBeneficiary}} 
-
-                    <a href="/offers/{{id}}" class="btn btn-outline-primary w-100">Voir plus</a>
-                </div>
-            </div>
-        </div>
-        {{/offers}}
     </div>
 
-    <!-- 📢 Message si aucune annonce n'est disponible -->
-    {{^offers}}
-    <div class="alert alert-warning text-center">Aucune annonce disponible.</div>
-    {{/offers}}
+    <!-- Search and Filters -->
+    <div class="container">
+        <form method="GET" action="/" class="search-filter-card mb-5">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <div class="search-input-group">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" class="form-control form-control-lg" 
+                               placeholder="Rechercher (aliment, type, etc.)" value="{{search}}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="location-input-group">
+                        <i class="bi bi-geo-alt"></i>
+                        <input type="text" name="location" class="form-control form-control-lg" 
+                               placeholder="Localisation (ville, code postal)" value="{{location}}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 h-100">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="advanced-filters mt-3">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <select name="category" class="form-select">
+                            <option value="">Toutes catégories</option>
+                            <option value="fruits">Fruits</option>
+                            <option value="legumes">Légumes</option>
+                            <option value="produits-laitiers">Produits laitiers</option>
+                            <option value="viandes">Viandes</option>
+                            <option value="boulangerie">Boulangerie</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="sort" class="form-select">
+                            <option value="">Trier par</option>
+                            <option value="date">Date d'expiration</option>
+                            <option value="distance">Distance</option>
+                            <option value="newest">Plus récent</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" name="expiry_date" class="form-control" placeholder="Date d'expiration">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-outline-secondary w-100" id="resetFilters">
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Offers Grid -->
+        <div class="row g-4">
+            {{#offers}}
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="offer-card">
+                    <div class="offer-badge {{#expiring_soon}}bg-warning{{/expiring_soon}}{{#new}}bg-success{{/new}}">
+                        {{#expiring_soon}}Expire bientôt{{/expiring_soon}}
+                        {{#new}}Nouveau{{/new}}
+                    </div>
+                    <div class="offer-image">
+                        <img src="{{image_url}}" alt="{{title}}" onerror="this.src='https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
+                    </div>
+                    <div class="offer-body">
+                        <div class="offer-header">
+                            <h3 class="offer-title">{{title}}</h3>
+                            <div class="offer-distance">
+                                <i class="bi bi-geo-alt"></i> {{distance}} km
+                            </div>
+                        </div>
+                        <p class="offer-description">{{description}}</p>
+                        
+                        <div class="offer-details">
+                            <div class="detail-item">
+                                <i class="bi bi-box-seam"></i>
+                                <span>{{quantity}} disponibles</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="bi bi-clock"></i>
+                                <span>Expire le {{expiration_date}}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="bi bi-shop"></i>
+                                <span>{{location}}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="offer-actions">
+                            {{#session.isBeneficiary}}
+                            <form action="/requests/create" method="POST" class="w-100">
+                                <input type="hidden" name="offer_id" value="{{id}}">
+                                <button class="btn btn-request" type="submit">
+                                    <i class="bi bi-cart-plus"></i> Demander
+                                </button>
+                            </form>
+                            {{/session.isBeneficiary}}
+                            
+                            <a href="/offers/{{id}}" class="btn btn-details">
+                                <i class="bi bi-eye"></i> Voir détails
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{/offers}}
+        </div>
+
+        <!-- Empty State -->
+        {{^offers}}
+        <div class="empty-state text-center py-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="Aucune annonce" class="img-fluid mb-4" style="max-height: 150px;">
+            <h3 class="mb-3">Aucune annonce disponible</h3>
+            <p class="text-muted mb-4">Il n'y a actuellement aucune offre correspondant à vos critères.</p>
+            {{#session.isDonator}}
+            <a href="/offers/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Publier une annonce
+            </a>
+            {{/session.isDonator}}
+        </div>
+        {{/offers}}
+
+        <!-- Pagination -->
+        {{#pagination}}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {{#previous}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{previous}}{{#search}}&search={{search}}{{/search}}{{#location}}&location={{location}}{{/location}}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {{/previous}}
+                
+                {{#pages}}
+                <li class="page-item {{#current}}active{{/current}}">
+                    <a class="page-link" href="?page={{number}}{{#search}}&search={{search}}{{/search}}{{#location}}&location={{location}}{{/location}}">{{number}}</a>
+                </li>
+                {{/pages}}
+                
+                {{#next}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{next}}{{#search}}&search={{search}}{{/search}}{{#location}}&location={{location}}{{/location}}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {{/next}}
+            </ul>
+        </nav>
+        {{/pagination}}
+    </div>
 </div>
 
 {{> footer}}
