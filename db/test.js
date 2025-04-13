@@ -6,6 +6,10 @@ try {
   // db.prepare(`ALTER TABLE users ADD COLUMN phone TEXT`).run();
   // db.prepare(`ALTER TABLE users ADD COLUMN bio TEXT`).run();
   // db.prepare(`ALTER TABLE users ADD COLUMN profile_picture TEXT`).run();
+   
+
+  db.prepare(`ALTER TABLE food_offers ADD COLUMN image_url TEXT`).run();
+
 
   const users = db.prepare('SELECT * FROM users').all();
   console.log("Contenu de la table users :", users);

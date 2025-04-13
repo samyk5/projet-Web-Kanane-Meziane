@@ -1,29 +1,55 @@
 {{> header}}
 
 <div class="container mt-5">
-  <h2>Modifier l'annonce</h2>
-  <form action="/offers/edit/{{offer.id}}" method="POST">
+  <h2 class="mb-4">✏️ Modifier l'annonce</h2>
+
+  <form action="/offers/edit/{{offer.id}}" method="POST" enctype="multipart/form-data">
     <div class="mb-3">
       <label for="title" class="form-label">Titre</label>
       <input type="text" class="form-control" id="title" name="title" value="{{offer.title}}" required>
     </div>
+
     <div class="mb-3">
       <label for="description" class="form-label">Description</label>
       <textarea class="form-control" id="description" name="description" required>{{offer.description}}</textarea>
     </div>
+
     <div class="mb-3">
       <label for="quantity" class="form-label">Quantité</label>
       <input type="number" class="form-control" id="quantity" name="quantity" value="{{offer.quantity}}" required>
     </div>
+
     <div class="mb-3">
       <label for="expiration_date" class="form-label">Date limite</label>
       <input type="date" class="form-control" id="expiration_date" name="expiration_date" value="{{offer.expiration_date}}" required>
     </div>
+
     <div class="mb-3">
       <label for="location" class="form-label">Localisation</label>
       <input type="text" class="form-control" id="location" name="location" value="{{offer.location}}" required>
     </div>
-    <button type="submit" class="btn btn-primary">Modifier</button>
+
+    <!-- Image actuelle -->
+    <div class="mb-3">
+      <label class="form-label">Image actuelle</label><br>
+      {{#offer.image_url}}
+        <img src="{{offer.image_url}}" alt="Image de l'offre" style="max-width: 200px; border-radius: 10px;" class="mb-3">
+      {{/offer.image_url}}
+    </div>
+
+    <!-- Nouvelle image -->
+    <div class="mb-3">
+      <label for="image" class="form-label">Changer l'image</label>
+      <input type="file" class="form-control" id="image" name="image" accept="image/*">
+    </div>
+
+    <!-- Ou URL -->
+    <div class="mb-3">
+      <label for="image_url" class="form-label">Ou URL de l'image</label>
+      <input type="url" class="form-control" id="image_url" name="image_url" value="{{offer.image_url}}">
+    </div>
+
+    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
   </form>
 </div>
 

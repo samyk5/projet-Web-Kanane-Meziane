@@ -5,7 +5,7 @@ const cookieSession = require('cookie-session');
 const sqlite = require('better-sqlite3');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Connexion à la base de données
 const db = new sqlite('./db/db.sqlite');
@@ -33,6 +33,10 @@ app.use((req, res, next) => {
   next();
 });
 
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 // Fonction de middleware pour vérifier si l'utilisateur est authentifié
 const requireAuth = (req, res, next) => {
   if (!req.session.user) {
@@ -49,9 +53,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 const authRoutes = require('./routes/auth')(db);
 const offersRoutes = require('./routes/offers')(db);
-const requestsRoutes = require('./routes/requests')(db);
+const requestsRoutes = require('./routes/requests')(db); 
 const indexRoutes = require('./routes/index')(db);
 const profileRoutes = require('./routes/profile')(db);
+const settingsRouter = require('./routes/settings')(db);
+
+
 
 
 
@@ -61,19 +68,11 @@ app.use('/auth', authRoutes);
 app.use('/offers', offersRoutes);
 app.use('/requests', requestsRoutes);
 app.use('/profile', profileRoutes);
+app.use('/settings', settingsRouter);
 
-// // Route GET pour la page d'accueil
-// app.get('/', requireAuth, (req, res) => {
-//   const offers = db.prepare("SELECT * FROM food_offers WHERE status = 'disponible'").all();
-//   res.render('index', {
-//     session: req.session.user ? {
-//       name: req.session.user.name,
-//       isDonator: req.session.user.role === 'donateur',
-//       isBeneficiary: req.session.user.role === 'beneficiaire'
-//     } : null,  // Récupère les informations de l'utilisateur connecté
-//     offers: offers
-//   });
-// });
+
+
+
 
 // Démarrer le serveur
 app.listen(PORT, () => {

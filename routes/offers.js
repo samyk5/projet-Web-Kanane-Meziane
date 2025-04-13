@@ -3,7 +3,7 @@ module.exports = (db) => {
   const router = express.Router();
   const { body, validationResult } = require('express-validator');
   const xss = require('xss');
-
+  const upload = require('../middlewares/upload');
   // Importation des fonctions
   const { getOfferById, updateOffer, deleteOffer } = require('../models/offerModel')(db);
 
@@ -99,33 +99,38 @@ module.exports = (db) => {
 
   // Afficher le formulaire d'édition d'une annonce
   router.get('/edit/:id', requireAuth, (req, res) => {
-    console.log("test") ; 
     const offerId = req.params.id;
-    
-    const offer = getOfferById(offerId);
+    const offer = db.prepare('SELECT * FROM food_offers WHERE id = ?').get(offerId);
 
-    
-
-    if (!offer || offer.user_id !== req.session.user.id) { // Correction de ownerId → user_id
+    if (!offer || offer.user_id !== req.session.user.id) {
       return res.status(403).send("Accès refusé");
     }
 
     res.render('edit_offer', { offer });
   });
-
   // Modifier une annonce (traitement du formulaire)
-  router.post('/edit/:id', requireAuth, (req, res) => {
+  router.post('/edit/:id', requireAuth, upload.single('image'), (req, res) => {
     const offerId = req.params.id;
-    const { title, description, quantity, expiration_date, location } = req.body;
+    const { title, description, quantity, expiration_date, location, image_url } = req.body;
 
-    // Vérifier si l'utilisateur est bien le propriétaire
-    const offer = getOfferById(offerId);
+    const offer = db.prepare('SELECT * FROM food_offers WHERE id = ?').get(offerId);
+
     if (!offer || offer.user_id !== req.session.user.id) {
-        return res.status(403).send("Accès refusé");
+      return res.status(403).send("Accès refusé");
     }
 
-    updateOffer(offerId, { title, description, quantity, expiration_date, location });
-    res.redirect('/offers/my-offers');
+    let finalImageUrl = image_url;
+    if (req.file) {
+      finalImageUrl = `/uploads/${req.file.filename}`;
+    }
+
+    db.prepare(`
+      UPDATE food_offers
+      SET title = ?, description = ?, quantity = ?, expiration_date = ?, location = ?, image_url = ?
+      WHERE id = ?
+    `).run(title, description, quantity, expiration_date, location, finalImageUrl, offerId);
+
+    res.redirect('/offers/mine'); // ou où tu veux rediriger
   });
 
   // Supprimer une annonce

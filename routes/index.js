@@ -39,7 +39,9 @@ module.exports = (db) => {
             // ✅ Gestion des rôles
             const sessionData = req.session.user
                 ? {
+                    id: req.session.user.id,
                     name: req.session.user.name,
+                    role: req.session.user.role,
                     isDonator: req.session.user.role === 'donateur',
                     isBeneficiary: req.session.user.role === 'beneficiaire'
                 }

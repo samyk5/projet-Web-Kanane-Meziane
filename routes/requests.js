@@ -37,7 +37,7 @@ module.exports = (db) => {
       `);
       insertQuery.run(offer_id, user_id);
   
-      res.redirect('/dashboard');
+      res.redirect('/');
     } catch (err) {
       console.error("Erreur lors de la création de la demande:", err);
       return res.status(500).send("Erreur serveur");
@@ -74,8 +74,8 @@ module.exports = (db) => {
       const enhancedRequests = requests.map(r => ({
         ...r,
         isPending: r.status === 'en attente',
-        isAccepted: r.status === 'accepté',
-        isRefused: r.status === 'refusé'
+        isAccepted: r.status === 'accepte',
+        isRefused: r.status === 'refuse'
       }));
   
       // Rendu de la vue
@@ -86,9 +86,16 @@ module.exports = (db) => {
     }
   });
 
+  const normalizeDiacritics = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
+  
   router.post('/respond', requireAuth, [
     body('request_id').isInt({ min: 1 }).withMessage("ID de la demande invalide"),
-    body('status').isIn(['accepté', 'refusé']).withMessage("Statut invalide")
+    body('status')
+      .trim() // Supprime les espaces inutiles
+      .customSanitizer(value => normalizeDiacritics(value)) // Normalise les accents
+      .isIn(['accepte', 'refuse']).withMessage("Statut invalide") // Validation après normalisation
   ], (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -98,6 +105,7 @@ module.exports = (db) => {
     const { request_id, status } = req.body;
   
     try {
+      // Récupérer la demande
       const request = db.prepare(`
         SELECT * FROM requests WHERE id = ?
       `).get(request_id);
@@ -106,32 +114,41 @@ module.exports = (db) => {
         return res.status(404).send("Demande introuvable");
       }
   
-      // Mise à jour du statut
+      // Mise à jour du statut de la demande
       db.prepare("UPDATE requests SET status = ? WHERE id = ?").run(status, request_id);
   
-      if (status === 'accepté') {
+      if (status === 'accepte') {
         // Récupérer l'offre correspondante
         const offer = db.prepare("SELECT * FROM food_offers WHERE id = ?").get(request.offer_id);
   
-        if (offer && offer.quantity > 0) {
+        if (!offer) {
+          return res.status(400).send("Offre introuvable");
+        }
+  
+        console.log("Quantité actuelle:", offer.quantity);
+  
+        // Vérifier et mettre à jour la quantité
+        if (offer.quantity > 0) {
           const newQuantity = offer.quantity - 1;
   
-          // Mettre à jour la quantité (et éventuellement le statut)
           if (newQuantity <= 0) {
             db.prepare("UPDATE food_offers SET quantity = 0, status = 'indisponible' WHERE id = ?").run(offer.id);
           } else {
             db.prepare("UPDATE food_offers SET quantity = ? WHERE id = ?").run(newQuantity, offer.id);
           }
+        } else {
+          return res.status(400).send("Stock insuffisant pour cette offre");
         }
       }
   
       res.redirect('/requests/my-requests');
     } catch (err) {
-      console.error("Erreur lors du traitement de la demande:", err);
+      console.error("Erreur lors du traitement de la demande:", err.message);
       return res.status(500).send("Erreur serveur");
     }
   });
-  
+
+
 
   
 
@@ -139,42 +156,58 @@ module.exports = (db) => {
 
 
   // routes/requests.js
-
   router.get('/my-status', requireAuth, (req, res) => {
-   if (req.session.user.role !== 'beneficiaire') {
-    return res.status(403).send('Accès non autorisé');
-   }
-
-   const query = `
-   SELECT 
-    r.id, 
-    r.status, 
-    o.id AS offer_id,         -- ← ici on ajoute l'identifiant de l'offre
-    o.title, 
-    o.description, 
-    o.location, 
-    o.expiration_date, 
-    r.request_date
-   FROM requests r
-   JOIN food_offers o ON r.offer_id = o.id
-   WHERE r.user_id = ?
-   ORDER BY r.request_date DESC
-   `;
-
-   try {
-     const myRequests = db.prepare(query).all(req.session.user.id);
-     res.render('my_status', {
-       requests: myRequests,
-       session: {
-         name: req.session.user.name,
-         isBeneficiary: true
+    if (req.session.user.role !== 'beneficiaire') {
+      return res.status(403).send('Accès non autorisé');
+    }
+  
+    const query = `
+      SELECT 
+        r.id, 
+        r.status, 
+        o.id AS offer_id,
+        o.title, 
+        o.description, 
+        o.location, 
+        o.expiration_date, 
+        r.request_date
+      FROM requests r
+      JOIN food_offers o ON r.offer_id = o.id
+      WHERE r.user_id = ?
+      ORDER BY r.request_date DESC
+    `;
+  
+    try {
+      const rawRequests = db.prepare(query).all(req.session.user.id);
+  
+      // Fonction pour normaliser le statut (pour les classes CSS)
+      function normalizeStatus(status) {
+        return status
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // supprime les accents
+          .replace(/\s/g, '-')            // espaces → tirets
+          .toLowerCase();                 // tout en minuscule
+      }
+  
+      const requests = rawRequests.map(r => ({
+        ...r,
+        cssStatus: normalizeStatus(r.status), // pour appliquer les classes CSS
+        displayStatus: r.status.charAt(0).toUpperCase() + r.status.slice(1) // pour affichage lisible
+      }));
+  
+      res.render('my_status', {
+        requests,
+        session: {
+          name: req.session.user.name,
+          isBeneficiary: true
         }
       });
     } catch (err) {
-     console.error("Erreur lors de la récupération des demandes:", err);
-     res.status(500).send("Erreur serveur");
+      console.error("Erreur lors de la récupération des demandes:", err);
+      res.status(500).send("Erreur serveur");
     }
   });
+  
 
 
 

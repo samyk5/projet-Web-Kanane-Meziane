@@ -1,20 +1,35 @@
+const fs = require('fs');
+const path = require('path');
 const sqlite = require('better-sqlite3');
-const db = new sqlite('db.sqlite');
 
-// Créer la table users
-db.prepare(`
+// 📁 Chemin vers la base
+const dbPath = path.join(__dirname, 'db.sqlite');
+
+// 🧹 Supprimer l'ancienne base si elle existe
+if (fs.existsSync(dbPath)) {
+  fs.unlinkSync(dbPath);
+  console.log('Ancienne base supprimée.');
+}
+
+// 📦 Créer une nouvelle base
+const db = new sqlite(dbPath);
+
+// ✅ Créer les tables avec tous les champs nécessaires
+db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE,
+    name TEXT,
     email TEXT UNIQUE,
     password TEXT,
     role TEXT,
-    location TEXT
-  )
-`).run();
+    location TEXT,
+    phone TEXT,
+    bio TEXT,
+    profile_picture TEXT,
+    is_verified INTEGER DEFAULT 0,
+    verification_token TEXT
+  );
 
-// Créer la table food_offers
-db.prepare(`
   CREATE TABLE IF NOT EXISTS food_offers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -26,11 +41,8 @@ db.prepare(`
     location TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY(user_id) REFERENCES users(id)
-  )
-`).run();
+  );
 
-// Créer la table requests
-db.prepare(`
   CREATE TABLE IF NOT EXISTS requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -39,7 +51,14 @@ db.prepare(`
     request_date TEXT DEFAULT (datetime('now')),
     FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(offer_id) REFERENCES food_offers(id)
-  )
-`).run();
+  );
+`);
 
-console.log("Base de données créée avec succès.");
+console.log("✅ Base de données recréée avec succès.");
+
+// (Optionnel) Affichage de confirmation
+const tables = ['users', 'food_offers', 'requests'];
+tables.forEach(table => {
+  const rows = db.prepare(`SELECT * FROM ${table}`).all();
+  console.log(`🧾 Table ${table} :`, rows);
+});

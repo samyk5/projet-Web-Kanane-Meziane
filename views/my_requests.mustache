@@ -37,11 +37,15 @@
           </td>
           <td>
             {{#isPending}}
-            <form action="/requests/respond" method="POST" class="d-flex gap-2">
-              <input type="hidden" name="request_id" value="{{id}}">
-              <button type="submit" name="status" value="accepté" class="btn btn-success btn-sm">✅ Accepter</button>
-              <button type="submit" name="status" value="refusé" class="btn btn-danger btn-sm">❌ Refuser</button>
-            </form>
+              <!-- Formulaire de réponse -->
+              <form action="/requests/respond" method="POST" class="d-flex gap-2">
+                <input type="hidden" name="request_id" value="{{id}}">
+                <!-- Champ caché pour le statut -->
+                <input type="hidden" name="status" id="status-{{id}}">
+                <!-- Boutons pour accepter et refuser -->
+                <button type="submit" class="btn btn-success btn-sm" onclick="setStatus('accepte', {{id}})">Accepter</button>
+                <button type="submit" class="btn btn-danger btn-sm" onclick="setStatus('refuse', {{id}})">Refuser</button>
+              </form>
             {{/isPending}}
 
             {{^isPending}}
@@ -63,3 +67,10 @@
 </div>
 
 {{> footer}}
+
+<script>
+  // Fonction pour définir la valeur du statut en fonction du bouton cliqué
+  function setStatus(status, requestId) {
+    document.getElementById('status-' + requestId).value = status;
+  }
+</script>
